@@ -10,6 +10,7 @@ namespace EF_Practise.Controllers
     public class VillaAPIController : ControllerBase
     {
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public List<Villa> GetVillas()
         {
             
@@ -17,9 +18,9 @@ namespace EF_Practise.Controllers
         }
 
         [HttpGet("id")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
 
         public async Task<ActionResult<Villa>> GetVilla([FromQuery] int id)
         {
@@ -36,9 +37,9 @@ namespace EF_Practise.Controllers
         }
 
         [HttpDelete("id")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
 
         public async Task<ActionResult<Villa>> DeleteVilla([FromQuery] int id)
         {
@@ -56,9 +57,9 @@ namespace EF_Practise.Controllers
         }
 
         [HttpGet("name")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
 
         public async Task<ActionResult<List<Villa>>> SearchVilla([FromQuery] string? search)
         {
@@ -73,6 +74,26 @@ namespace EF_Practise.Controllers
             {
                 return NotFound();
             }
+            return Ok(villa);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+
+        public async Task<ActionResult<Villa>> CreateVilla(Villa villa)
+        {
+            if(villa== null)
+            {
+                return BadRequest();
+            }
+            if (villa.Id > 0)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+            villa.Id=VillaStore.villas.OrderByDescending(item => item.Id).FirstOrDefault().Id+1;
+            VillaStore.villas.Add(villa);
             return Ok(villa);
         }
     }
