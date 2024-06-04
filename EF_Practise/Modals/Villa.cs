@@ -8,5 +8,7 @@ namespace EF_Practise.Modals
         [Required]
         [MaxLength(30)]
         public string Name { get; set; }
+        public int Ocupancy { get; set; }
+        public int Sqft { get; set; }
     }
 }

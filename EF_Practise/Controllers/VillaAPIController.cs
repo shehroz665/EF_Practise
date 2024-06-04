@@ -1,6 +1,7 @@
 ﻿using EF_Practise.Data;
 using EF_Practise.Modals;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EF_Practise.Controllers
@@ -17,7 +18,7 @@ namespace EF_Practise.Controllers
             return VillaStore.villas;
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -36,12 +37,12 @@ namespace EF_Practise.Controllers
             return Ok(villa);
         }
 
-        [HttpDelete("id")]
+        [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
 
-        public async Task<ActionResult<Villa>> DeleteVilla([FromQuery] int id)
+        public async Task<ActionResult<Villa>> DeleteVilla(int id)
         {
             if (id == 0)
             {
@@ -67,8 +68,12 @@ namespace EF_Practise.Controllers
             {
                 return Ok(VillaStore.villas.ToList());  
             }
+            search=search.ToLower();
             var villa= VillaStore.villas
-                .Where(item=> item.Name.Contains(search,StringComparison.OrdinalIgnoreCase))
+                .Where(item=> item.Name.ToLower().Contains(search) 
+                || item.Ocupancy.ToString().ToLower().Contains(search)
+                || item.Sqft.ToString().ToLower().Contains(search)
+                )
                 .ToList();
             if (villa == null || villa.Count==0)
             {
@@ -77,13 +82,18 @@ namespace EF_Practise.Controllers
             return Ok(villa);
         }
 
-        [HttpPost]
+        [HttpPost("create")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
         public async Task<ActionResult<Villa>> CreateVilla(Villa villa)
         {
+            if(VillaStore.villas.FirstOrDefault((item) => item.Name.ToLower() == villa.Name.ToLower()) != null)
+            {
+                 ModelState.AddModelError("Custom Error", "Villa must be unique");
+                return BadRequest(ModelState);
+            }
             if(villa== null)
             {
                 return BadRequest();
@@ -96,5 +106,65 @@ namespace EF_Practise.Controllers
             VillaStore.villas.Add(villa);
             return Ok(villa);
         }
+
+        [HttpPut("update")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<ActionResult<Villa>> UpdateVilla(Villa villa)
+        {
+            if(villa.Id == 0)
+            {
+                return BadRequest();
+            }
+            var villaObj = VillaStore.villas.FirstOrDefault((item) => item.Id==villa.Id); 
+            if(villaObj==null){
+                return NotFound();
+            }
+            villaObj.Name=villa.Name;
+            villaObj.Ocupancy=villa.Ocupancy;
+            villaObj.Sqft=villa.Sqft;
+            return Ok(villaObj);
+        }
+
+        [HttpPatch("update/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<ActionResult<Villa>> UpdatePatchVilla(int id,JsonPatchDocument<Villa> villa)
+        {
+            if (id == 0 || villa==null)
+            {
+                return BadRequest();
+            }
+            var villaObj = VillaStore.villas.FirstOrDefault((item) => item.Id == id);
+            if (villaObj == null)
+            {
+                return NotFound();
+            }
+            villa.ApplyTo(villaObj,ModelState);
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return NoContent();
+        }
+
+        // id=2
+        //        [
+        //          {
+        //             "path": "/sqft",
+        //              "op": "replace",
+        //              "value": "105"
+        //           },
+        //           {
+        //              "path": "/ocupancy",
+        //              "op": "replace",
+        //              "value": "199"
+        //              },
+        //]
+
     }
 }
