@@ -3,25 +3,19 @@ using EF_Practise.Modals;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace EF_Practise.Controllers
 {
-    [Route("api/db/")]
+    [Route("api/dto/")]
     [ApiController]
-    public class VillaDtoAPIController : ControllerBase
+    public class VillaAPIDtoController : ControllerBase
     {
-        public readonly ApplicationDbContext _db;
-        public VillaDtoAPIController(ApplicationDbContext db)
-        {
-            _db= db;
-        }
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public  ActionResult<IEnumerable<VillaDto>> GetVillas()
+        public List<VillaDto> GetVillas()
         {
-            var villa =  _db.VillaDtos.ToList();
-            return Ok(villa);
+            
+            return VillaStore.villas;
         }
 
         [HttpGet("{id:int}")]
@@ -31,12 +25,12 @@ namespace EF_Practise.Controllers
 
         public async Task<ActionResult<VillaDto>> GetVilla(int id)
         {
-            if (id == 0)
+            if(id== 0)
             {
                 return BadRequest();
             }
-            var villa = _db.VillaDtos.FirstOrDefault(item => item.Id == id);
-            if (villa == null)
+            var villa = VillaStore.villas.FirstOrDefault(item => item.Id == id);
+            if(villa == null)
             {
                 return NotFound();
             }
@@ -54,12 +48,12 @@ namespace EF_Practise.Controllers
             {
                 return BadRequest();
             }
-            var villa = _db.VillaDtos.FirstOrDefault(item => item.Id == id);
+            var villa = VillaStore.villas.FirstOrDefault(item => item.Id == id);
             if (villa == null)
             {
                 return NotFound();
             }
-            _db.VillaDtos.Remove(villa);
+            VillaStore.villas.Remove(villa);
             return Ok(villa);
         }
 
@@ -72,17 +66,16 @@ namespace EF_Practise.Controllers
         {
             if (string.IsNullOrEmpty(search))
             {
-                var villaList = await _db.VillaDtos.ToListAsync();
-                return Ok(villaList);
+                return Ok(VillaStore.villas.ToList());  
             }
-            search = search.ToLower();
-            var villa = await _db.VillaDtos
-                .Where(item => item.Name.ToLower().Contains(search)
+            search=search.ToLower();
+            var villa= VillaStore.villas
+                .Where(item=> item.Name.ToLower().Contains(search) 
                 || item.Ocupancy.ToString().ToLower().Contains(search)
                 || item.Sqft.ToString().ToLower().Contains(search)
-                ).ToListAsync();
-              ;
-            if (villa == null || villa.Count== 0)
+                )
+                .ToList();
+            if (villa == null || villa.Count==0)
             {
                 return NotFound();
             }
@@ -96,13 +89,12 @@ namespace EF_Practise.Controllers
 
         public async Task<ActionResult<VillaDto>> CreateVilla(VillaDto villa)
         {
-            var villaExist = await _db.VillaDtos.FirstOrDefaultAsync((item) => item.Name.ToLower() == villa.Name.ToLower());
-            if (villaExist != null)
+            if(VillaStore.villas.FirstOrDefault((item) => item.Name.ToLower() == villa.Name.ToLower()) != null)
             {
-                ModelState.AddModelError("Custom Error", "Villa must be unique");
+                 ModelState.AddModelError("Custom Error", "Villa must be unique");
                 return BadRequest(ModelState);
             }
-            if (villa == null)
+            if(villa== null)
             {
                 return BadRequest();
             }
@@ -110,9 +102,8 @@ namespace EF_Practise.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            villa.Id = _db.VillaDtos.OrderByDescending(item => item.Id).FirstOrDefault().Id + 1;
-            await _db.VillaDtos.AddAsync(villa);
-            await _db.SaveChangesAsync();
+            villa.Id=VillaStore.villas.OrderByDescending(item => item.Id).FirstOrDefault().Id+1;
+            VillaStore.villas.Add(villa);
             return Ok(villa);
         }
 
@@ -121,24 +112,59 @@ namespace EF_Practise.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
 
-        public async Task<ActionResult<VillaDto>> UpdateVilla(VillaDto villa)
+        public async Task<ActionResult<Villa>> UpdateVilla(Villa villa)
         {
-            if (villa.Id == 0)
+            if(villa.Id == 0)
             {
                 return BadRequest();
             }
-            var villaObj = _db.VillaDtos.FirstOrDefault((item) => item.Id == villa.Id);
+            var villaObj = VillaStore.villas.FirstOrDefault((item) => item.Id==villa.Id); 
+            if(villaObj==null){
+                return NotFound();
+            }
+            villaObj.Name=villa.Name;
+            villaObj.Ocupancy=villa.Ocupancy;
+            villaObj.Sqft=villa.Sqft;
+            return Ok(villaObj);
+        }
+
+        [HttpPatch("update/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+
+        public async Task<ActionResult<VillaDto>> UpdatePatchVilla(int id,JsonPatchDocument<VillaDto> villa)
+        {
+            if (id == 0 || villa==null)
+            {
+                return BadRequest();
+            }
+            var villaObj = VillaStore.villas.FirstOrDefault((item) => item.Id == id);
             if (villaObj == null)
             {
                 return NotFound();
             }
-            villaObj.Name = villa.Name;
-            villaObj.Ocupancy = villa.Ocupancy;
-            villaObj.Sqft = villa.Sqft;
-            _db.VillaDtos.Update(villaObj);
-            await _db.SaveChangesAsync();
-            return Ok(villaObj);
+            villa.ApplyTo(villaObj,ModelState);
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return NoContent();
         }
+
+        // id=2
+        //        [
+        //          {
+        //             "path": "/sqft",
+        //              "op": "replace",
+        //              "value": "105"
+        //           },
+        //           {
+        //              "path": "/ocupancy",
+        //              "op": "replace",
+        //              "value": "199"
+        //              },
+        //         ]
 
     }
 }

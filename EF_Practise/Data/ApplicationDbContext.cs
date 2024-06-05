@@ -9,6 +9,6 @@ namespace EF_Practise.Data
         {
             
         }
-        public DbSet<VillaDto> VillaDtos {  get; set; } 
+        public DbSet<Villa> Villas {  get; set; } 
     }
 }
