@@ -23,7 +23,7 @@ namespace EF_Practise.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
 
-        public async Task<ActionResult<Villa>> GetVilla([FromQuery] int id)
+        public async Task<ActionResult<Villa>> GetVilla(int id)
         {
             if(id== 0)
             {
@@ -164,7 +164,7 @@ namespace EF_Practise.Controllers
         //              "op": "replace",
         //              "value": "199"
         //              },
-        //]
+        //         ]
 
     }
 }
