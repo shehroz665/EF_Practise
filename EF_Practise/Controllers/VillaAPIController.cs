@@ -110,7 +110,6 @@ namespace EF_Practise.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            villa.Id = _db.Villas.OrderByDescending(item => item.Id).FirstOrDefault().Id + 1;
             await _db.Villas.AddAsync(villa);
             await _db.SaveChangesAsync();
             return Ok(villa);
