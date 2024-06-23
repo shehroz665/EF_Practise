@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EFPractise.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240605145708_AddVillaTable")]
+    [Migration("20240606023601_AddVillaTable")]
     partial class AddVillaTable
     {
         /// <inheritdoc />
