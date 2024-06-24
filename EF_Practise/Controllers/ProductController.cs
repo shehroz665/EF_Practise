@@ -29,7 +29,7 @@ namespace EF_Practise.Controllers
                 var query = from p in _db.Products
                             join c in _db.Categories on p.CategoryId equals c.CategoryId into pc
                             from category in pc.DefaultIfEmpty()
-                            orderby p.Price ascending
+                            orderby p.Name ascending
                             select new Product
                             {
                                 ProductId = p.ProductId,

@@ -13,6 +13,8 @@ namespace EF_Practise.Modals
          public string? Name { get; set; }
          public int? Price { get; set; }
          public int? CategoryId { get; set; }
+
+         public DateTime? CreatedOn { get; set; }
         
          [NotMapped]
          public string? CategoryName { get; set; }

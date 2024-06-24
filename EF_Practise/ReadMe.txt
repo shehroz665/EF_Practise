@@ -1,2 +1,4 @@
 ﻿add-migration AddVillaTable
- update-database
+add-migration AddCreatedOnToProduct
+add-migration RemoveCreatedOnColumnFromProduct
+update-database
